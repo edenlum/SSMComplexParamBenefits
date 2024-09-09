@@ -1,7 +1,4 @@
 seed: 1
-wandb:
-   entity: "complex-team"
-   project: "InductionHead_new"
 dataset:
   name: "delay"
   epoch_size: 1024
