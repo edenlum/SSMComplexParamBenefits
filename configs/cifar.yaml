@@ -1,0 +1,41 @@
+seed: 1919
+wandb:
+   entity: "complex-team"
+   project: "sCIFAR"
+dataset:
+  name: "CIFAR-10"
+  _name_: "cifar"
+  grayscale: True
+train:
+  num_epochs: 30
+  batch_size: 64
+  lr: 0.0002
+  wd: 0.01
+model:
+  layer: "mamba"
+  num_blocks: 6
+  input_dim: 1
+  output_dim: 10
+  hidden_dim: 256
+  state_dim: 64
+  conv_dim: 4
+  expansion: 2
+  dropout: 0.0
+  glu: True
+  norm: "layer"
+  dual: False
+  prenorm: False
+  pooling: "mean"
+train:
+  num_epochs: 200
+  batch_size: 64
+  lr: 0.001
+  stop_on_loss: 0.01
+model:
+  n_layers: 6
+  d_model: 64
+  d_state: 64
+  ssm_type: "S4D-Real"
+  vocab_size: 16
+  pad_vocab_size_multiple: 16
+  bidirectional: false

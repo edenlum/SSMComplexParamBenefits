@@ -1,0 +1,8 @@
+torch==2.2.0
+numpy==1.26
+wandb==0.16
+ray==2.31
+tqdm==4.66.2
+scipy==1.11.4
+pytorch-lightning==2.2.3
+einops==0.7.0

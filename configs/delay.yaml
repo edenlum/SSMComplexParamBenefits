@@ -1,0 +1,25 @@
+seed: 1
+wandb:
+   entity: "complex-team"
+   project: "InductionHead_new"
+dataset:
+  name: "delay"
+  epoch_size: 1024
+  lag: 64
+  n_categories: 16
+  extra: 64
+  auto_regressive: false
+  copy_token: false
+train:
+  num_epochs: 5000
+  batch_size: 8
+  lr: 0.001
+  stop_on_loss: 0.01
+model:
+  n_layers: 2
+  d_model: 64
+  d_state: 64
+  ssm_type: "S4D-Real"
+  vocab_size: 16
+  pad_vocab_size_multiple: 16
+  bidirectional: false
