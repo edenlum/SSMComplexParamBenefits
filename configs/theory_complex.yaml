@@ -1,0 +1,11 @@
+seed: 1
+N: 256
+complex_option: true
+L: 256 # if None then L=N
+task_name: "random"
+opt: "adam"
+num_epochs: 500000
+use_wandb: true
+lr: 0.00001
+r_min: 0.99
+BC_std: 0.001
