@@ -19,6 +19,11 @@ If you wish to run multiple experiments, you can modify the values in the main()
 ### Real-World Setting
 To reproduce the experiments in the real-world setting, 
 please refer to the s4 repo from state-spaces [here](https://github.com/state-spaces/s4/).
+After cloning the s4 repo, copy the configuration files into the relevant directory and run the following command:
+```
+python -m train experiment=lra/s4d-real-cifar 
+```
+
 
 ### Selectivity
 To reproduce the experiments on selectivity, use the following command:
