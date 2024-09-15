@@ -186,7 +186,7 @@ def main():
     print(f"\nUsing config {config}")
     print(f"\nOverrides: {overrides}")
 
-    with open("configs/" + config) as stream:
+    with open("configs/selectivity/" + config) as stream:
         try:
             base_config = yaml.safe_load(stream)
             base_config = override_config(base_config, overrides)
