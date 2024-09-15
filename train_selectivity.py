@@ -180,6 +180,7 @@ def main():
     parser.add_argument('--overrides', nargs='*', default=[],
                         help='Provide overrides as key=value pairs (e.g., model.ssm_type="S4D-Complex").')
     parser.add_argument("--file", type=str, default=None, help="One step file to save")
+    parser.add_argument('--num_cpus', type=int, default=4, help='Number of CPUs to use')
     config = parser.parse_args().config
     overrides = parser.parse_args().overrides
     print(f"\nUsing config {config}")
@@ -192,7 +193,7 @@ def main():
         except yaml.YAMLError as exc:
             raise RuntimeError(exc)
 
-    ray.init(num_cpus=64, ignore_reinit_error=True)
+    ray.init(num_cpus=parser.parse_args().num_cpus, ignore_reinit_error=True)
     pb = ProgressBar()
     progress_bar_actor = pb.actor
     if "wandb" in base_config and "api_key" in base_config["wandb"]:

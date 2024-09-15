@@ -9,10 +9,13 @@ pip install -r requirements.txt
 
 ## Experiments
 ### Theoretically Analyzed Settings
-To run the experiments in the theoretically analyzed settings, use the following command:
+To run an experiment in the theoretically analyzed settings, use the following command:
 ```
-python TODO
+python train_thoery.py --config <config_file>.yaml
 ```
+where `<config_file>` is the name of the configuration file in the `configs` directory.
+If you wish to run multiple experiments, you can modify the values in the main() function in train_theory.py.
+
 ### Real-World Setting
 To reproduce the experiments in the real-world setting, 
 please refer to the s4 repo from state-spaces [here](https://github.com/state-spaces/s4/).
