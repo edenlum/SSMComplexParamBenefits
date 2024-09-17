@@ -121,6 +121,7 @@ def main():
         ]
     else:
         raise Exception(f"Unknown experiment name: '{experiment}'. Expected 'complex' or 'real'.")
+    
     settings_options.append(['wandb_project_name', [parser.parse_args().project_name]])
 
     config_path = f"./configs/theory/theory_{experiment}.yaml"
