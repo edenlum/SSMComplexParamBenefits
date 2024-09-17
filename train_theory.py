@@ -20,9 +20,14 @@ def train(N, complex_option, seed, task_name, L, lr,
           ):
     torch.manual_seed(seed)
 
+    opt = optimizers[opt]
+    lr = float(lr)
+    r_min = float(r_min)
+    num_epochs = int(num_epochs)
+    seed = int(seed)
+    N = int(N)
     if L == "N":
         L = N
-    opt = optimizers[opt]
 
     ssm = VanillaSSM(N, complex_option=complex_option, BC_std=BC_std, r_min=r_min)
     criterion = nn.MSELoss(reduction='sum')
@@ -84,106 +89,48 @@ def train(N, complex_option, seed, task_name, L, lr,
 def train_multiprocess(**kwargs):
     train(**kwargs)
 
-
-# #%%
-# BC_std = 0.001  # Standard deviation for B and C initialization
-# num_epochs = 500000
-# seeds = [0, 1, 2, ]
-# task_names = ["random", "delay", "oscillation"]
-# lrs = [0.0001, 0.00001, 0.000001]
-# r_mins = [0, 0.99]
-#
-#
-# tasks = []
-#
-# # Experiments for complex parametrization
-# complex_option = True
-# for seed in seeds:
-#     for L in [256, 32, 64, 128]:
-#         for task_name in task_names:
-#             for cur_opt in [optim.Adam, ]:
-#                 torch.manual_seed(seed)
-#
-#                 N = L
-#                 task = train_multiprocess.remote(N=N,
-#                                                  complex_option=complex_option,
-#                                                  seed=seed, L=L,
-#                                                  task_name=task_name,
-#                                                  opt=cur_opt,
-#                                                  num_epochs=num_epochs,
-#                                                  use_wandb=True,
-#                                                  lr=0.00001,
-#                                                  r_min=0.99
-#                                                  )
-#                 tasks.append(task)
-#
-# # Experiments for real parametrization
-# complex_option = False
-# for r_min in r_mins:
-#     for seed in seeds:
-#         for L in [32, ]:
-#             for cur_opt in [optim.Adam, optim.AdamW, optim.RAdam]:
-#                 for lr in lrs:
-#                     for task_name in task_names:
-#                         task = torch.manual_seed(seed)
-#                         N = 1024
-#                         task = train_multiprocess.remote(N=N,
-#                                                          complex_option=complex_option,
-#                                                          seed=seed, L=L,
-#                                                          task_name=task_name,
-#                                                          opt=cur_opt,
-#                                                          num_epochs=num_epochs,
-#                                                          use_wandb=True,
-#                                                          lr=lr,
-#                                                          r_min=r_min
-#                                                          )
-#                         tasks.append(task)
-#
-# results = ray.get(tasks)
-
-
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, required=True, help="experiment config file")
-    parser.add_argument('--overrides', nargs='*', default=[],
-                        help='Provide overrides as key=value pairs (e.g., lr=0.01).')
+    parser.add_argument("--experiment",
+                        type=str,
+                        required=True,
+                        help="Name of the experiment to run. Options: <complex, real>")
+    parser.add_argument('--project_name',
+                        type=str,
+                        required=False,
+                        default="TheoreticalSSM",
+                        help='The name of the wandb project to save results in')
     parser.add_argument('--num_cpus', type=int, default=4, help='Number of CPUs to use')
-    config = parser.parse_args().config
-    overrides = parser.parse_args().overrides
-    print(f"\nUsing config {config}")
-    print(f"\nOverrides: {overrides}")
 
-    with open("./configs/theory/" + config) as stream:
-        try:
-            base_config = yaml.safe_load(stream)
-            base_config = override_config(base_config, overrides)
-        except yaml.YAMLError as exc:
-            raise RuntimeError(exc)
+    experiment = parser.parse_args().experiment
+
+    if experiment == "complex":
+        settings_options = [
+            ["seed", [0, 1, 2]],
+            ["task_name", ["random", "delay", "oscillation"]],
+            ["N", [256, 32, 64, 128]],
+            ["L", ["N"]],
+        ]
+    elif experiment == "real":
+        settings_options = [
+            ["seed", [0, 1, 2]],
+            ["task_name", ["random", "delay", "oscillation"]],
+            ["r_min", [0.0, 0.99]],
+            ["lr", [0.0001, 0.00001, 0.000001]],
+            ["opt", ["adam", "adamw", "radam"]]
+        ]
+    else:
+        raise Exception(f"Unknown experiment name: '{experiment}'. Expected 'complex' or 'real'.")
+    settings_options.append(['wandb_project_name', [parser.parse_args().project_name]])
+
+    config_path = f"./configs/theory/theory_{experiment}.yaml"
+
+    with open(config_path) as stream:
+        base_config = yaml.safe_load(stream)
 
     ray.init(num_cpus=parser.parse_args().num_cpus, ignore_reinit_error=True)
-    if "wandb" in base_config and "api_key" in base_config["wandb"]:
-        wandb.login(key=base_config["wandb"]["api_key"])
 
-    # You can modify the values here to run in parallel using ray
     tasks = []
-
-    # settings for complex
-    settings_options = [
-        ["seed", [0, 1, 2]],
-        ["task_name", ["random", "delay", "oscillation"]],
-        ["N", [256, 32, 64, 128]],
-        ["L", ["N"]],
-    ]
-
-    # settings for real
-    # settings_options = [
-    #     ["seed", [0, 1, 2]],
-    #     ["task_name", ["random", "delay", "oscillation"]],
-    #     ["r_min", [0, 0.99]],
-    #     ["lr", [0.0001, 0.00001, 0.000001]],
-    #     ["opt", ["adam", "adamw", "radam"]]
-    # ]
-
     for config in experiments(settings_options):
         config = override_config(base_config, [f"{k}={v}" for k, v in config.items()])
         print("\nCONFIG:")
