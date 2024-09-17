@@ -56,12 +56,30 @@ python -m train experiment=lra/<config_file>.yaml
 where `<config_file>` is the name of the configuration file in the `configs/experiment/lra` directory (in the s4 repo).
 
 ### Selectivity
-To reproduce the experiments on selectivity, use the following command:
+
+To reproduce a single run from the experiments on selectivity, use the following command:
+
+```bash
+python train_selectivity.py --config <config_file>.yaml --num_cpus <number_of_cpus> --project_name <your_project_name>
 ```
-python train_selectivity.py --config <config_file>.yaml
+
+- `<config_file>`: The name of the configuration file in the `configs/selectivity` directory (either `delay.yaml` or `induction.yaml`).
+- `<num_cpus>`: Specify the number of CPUs to use. Each experiment in the set will run on a different CPU. Defaults to 4.
+- `<project_name>`: (Optional) Specify the name of the W&B project where results will be saved. Defaults to `Selecticity-Experiments`.
+
+To run the ablation study, add the `--ablation` flag. This will run multiple experiments in parallel, each with different hyperparameters.
+
+You can play with the hyperparameters in the 'main()' function in 'train_selectivity.py'.
+
+**Example Usage:**
+
+```bash
+python train_selectivity.py --config induction.yaml --ablation
 ```
-where `<config_file>` is the name of the configuration file in the `configs/selectivity` directory.
-You can also modify the values in the main() function in train.py, to run a grid search over the hyperparameters.
+
+This command will use the configuration from `configs/selectivity/induction.yaml` and run the ablation study with 1 seed.
+
+**Results will be available on your W&B project page.**
 
 ## Citation
 For citing the paper you can use:

@@ -23,7 +23,7 @@ if not torch.cuda.is_available():
 device = torch.device('cuda')
 
 
-def train(config, model, data_loader, optimizer, mask, save_one_step_file=None):
+def train(config, model, data_loader, optimizer, mask):
     losses = []
     for epoch in range(config["train"]["num_epochs"]):
         avg_loss = 0
@@ -70,13 +70,6 @@ def train(config, model, data_loader, optimizer, mask, save_one_step_file=None):
             # Accuracy for the first and last tokens in the sequence
             first_token_correct_count += (relevant_predicted[:, 0] == relevant_labels[:, 0]).sum().item()
             last_token_correct_count += (relevant_predicted[:, -1] == relevant_labels[:, -1]).sum().item()
-
-            if save_one_step_file is not None:
-                os.makedirs(os.path.dirname(save_one_step_file), exist_ok=True)
-                torch.save(model.state_dict(), f'{save_one_step_file}.pth')
-                with open(f'{save_one_step_file}.pkl', 'wb') as file:
-                    pickle.dump([logits, loss], file)
-                return
 
         total_sequences = sum(len(labels) for _, labels in data_loader)
         avg_loss /= len(data_loader)
@@ -126,8 +119,8 @@ def get_dataset_mask(data_config):
     return dataset, mask
 
 
-@ray.remote(num_gpus=0.5)
-def run_experiment(config, progress_bar_actor, file_path):
+@ray.remote(num_gpus=1)
+def run_experiment(config, progress_bar_actor):
     try:
         wandb_config = config["wandb"]
         model_config = config["model"]
@@ -135,7 +128,7 @@ def run_experiment(config, progress_bar_actor, file_path):
         train_config = config["train"]
 
         wandb.init(
-            entity=wandb_config["entity"],
+            entity=wandb_config.get("entity", None),
             project=wandb_config["project"],
             config=config,
             name=f"{model_config['ssm_type']}"
@@ -153,13 +146,7 @@ def run_experiment(config, progress_bar_actor, file_path):
 
         optimizer = optim.Adam(model.parameters(), lr=train_config["lr"])
 
-        if file_path is not None:
-            json_data = json.dumps(config, sort_keys=True)  # sort_keys ensures consistent order
-            # Generate the hash (using SHA256 as an example)
-            hash_object = hashlib.sha256(json_data.encode('utf-8'))
-            file_path = f"{file_path}/{hash_object.hexdigest()}"
-
-        train(config, model, data_loader, optimizer, mask, save_one_step_file=file_path)
+        train(config, model, data_loader, optimizer, mask)
 
         for i in range(6, 21):
             test_data_config = deepcopy(data_config)
@@ -179,8 +166,10 @@ def main():
     parser.add_argument("--config", type=str, required=True, help="experiment config file")
     parser.add_argument('--overrides', nargs='*', default=[],
                         help='Provide overrides as key=value pairs (e.g., model.ssm_type="S4D-Complex").')
-    parser.add_argument("--file", type=str, default=None, help="One step file to save")
+    parser.add_argument("--ablation", action='store_true', default=False, required=False, help="Run ablation study")
     parser.add_argument('--num_cpus', type=int, default=4, help='Number of CPUs to use')
+    parser.add_argument('--project_name', type=str, required=False, default="Selecticity-Experiments",
+                        help='The name of the wandb project to save results in')
     config = parser.parse_args().config
     overrides = parser.parse_args().overrides
     print(f"\nUsing config {config}")
@@ -199,27 +188,30 @@ def main():
     if "wandb" in base_config and "api_key" in base_config["wandb"]:
         wandb.login(key=base_config["wandb"]["api_key"])
 
-    # You can modify the values here to run in parallel using ray
     tasks = []
-    settings_options = [
-        ["d_state", [16]],
-        ["seed", [4]],
-        # ["dataset.induction_len", [16, 32, 64, 128, 255]],
-        # ["dataset.auto_regressive", [True]],
-        # ["model.S4_init", ["diag-lin", "legs", "diag-real", "diag-legs", "diag-random"]],
-        ["model.bias", [False]],
-        ["model.B_is_selective", [True, False]],
-        ["model.C_is_selective", [True, False]],
-        ["model.dt_is_selective", [False, True]],
-        ["model.channel_sharing", [False]],
-        ["model.ssm_type", ["S6-Real", "S6-Complex"]],
-    ]
+    if parser.parse_args().ablation:
+        # you can change the settings_options to run different ablation studies as you like
+        # this will generate an outer product of all the hyperparameters
+        settings_options = [
+            ["d_state", [16]],
+            ["seed", [0]],
+            ["model.bias", [False]],
+            ["model.B_is_selective", [True, False]],
+            ["model.C_is_selective", [True, False]],
+            ["model.dt_is_selective", [False, True]],
+            ["model.channel_sharing", [False]],
+            ["model.ssm_type", ["S6-Real", "S6-Complex"]],
+        ]
+    else:
+        settings_options = []
+    settings_options.append(['wandb.project', [parser.parse_args().project_name]])
+
     for config in experiments(settings_options):
         config.update({"comment": ""})
         config = override_config(base_config, [f"{k}={v}" for k, v in config.items()])
         print("\nCONFIG:")
         print(yaml.dump(config))
-        tasks.append(run_experiment.remote(config, progress_bar_actor, file_path=parser.parse_args().file))
+        tasks.append(run_experiment.remote(config, progress_bar_actor))
     pb.set_total(len(tasks))
     pb.print_until_done()
 
