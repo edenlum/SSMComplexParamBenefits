@@ -1,20 +1,50 @@
 # SSMComplexParamBenefits
 Code for reproducing the experiments in the paper Provable Benefits of Complex Parameterizations for Structured State Space Models [TODO: add link to arxiv when we upload]
 
-## Install Requirements
-Tested with python 3.12.4.
-```
+## Setup
+
+### Install Requirements
+
+Tested with Python 3.12.4.
+
+```bash
 pip install -r requirements.txt
 ```
 
+### Setup W&B
+
+To use Weights & Biases (W&B) for tracking your experiments, you need to log in to your W&B account. You can do this by running the following command:
+
+```bash
+wandb login
+```
+
+When prompted, paste your API key, which you can find on your [W&B settings page](https://wandb.ai/settings) after logging in. This will store your credentials locally, allowing W&B to track and log your experiments automatically.
+
+For more detailed instructions on setting up W&B, you can refer to the [W&B Quickstart Guide](https://docs.wandb.ai/quickstart)
+
 ## Experiments
-### Theoretically Analyzed Settings
-To run an experiment in the theoretically analyzed settings, use the following command:
+### Running Theoretical SSM Experiments
+
+To run a set of experiments in the theoretically analyzed settings, use the following command:
+
+```bash
+python train_theory.py --experiment <real,complex> --num_cpus <number_of_cpus> --project_name <your_project_name>
 ```
-python train_theory.py --config theory_<real,complex>.yaml
+
+- `<experiment>`: Choose either `real` or `complex` to run a set of experiments.
+- `<num_cpus>`: Specify the number of CPUs to use. Each experiment in the set will run on a different CPU. Defaults to 4.
+- `<project_name>`: (Optional) Specify the name of the W&B project where results will be saved. Defaults to `TheoreticalSSM`.
+
+**Results will be available on your W&B project page.**
+
+For example:
+
+```bash
+python train_theory.py --experiment real --project_name MyProject --num_cpus 4
 ```
-where `<config_file>` is the name of the configuration file in the `configs/theory` directory.
-If you wish to run multiple experiments, you can modify the values in the main() function in train_theory.py.
+
+This will run the `real` experiment set using `4` CPUs, with each experiment in the set running on a separate CPU, and log the results under `MyProject` on W&B.
 
 ### Real-World Setting
 To reproduce the experiments in the real-world setting, 
