@@ -11,7 +11,7 @@ pip install -r requirements.txt
 ### Theoretically Analyzed Settings
 To run an experiment in the theoretically analyzed settings, use the following command:
 ```
-python train_theory.py --config thoery_<real,complex>.yaml
+python train_theory.py --config theory_<real,complex>.yaml
 ```
 where `<config_file>` is the name of the configuration file in the `configs/theory` directory.
 If you wish to run multiple experiments, you can modify the values in the main() function in train_theory.py.
