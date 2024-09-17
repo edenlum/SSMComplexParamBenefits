@@ -126,7 +126,7 @@ def get_dataset_mask(data_config):
     return dataset, mask
 
 
-@ray.remote(num_gpus=0.5)
+@ray.remote(num_gpus=1)
 def run_experiment(config, progress_bar_actor, file_path):
     try:
         wandb_config = config["wandb"]
@@ -179,8 +179,10 @@ def main():
     parser.add_argument("--config", type=str, required=True, help="experiment config file")
     parser.add_argument('--overrides', nargs='*', default=[],
                         help='Provide overrides as key=value pairs (e.g., model.ssm_type="S4D-Complex").')
-    parser.add_argument("--file", type=str, default=None, help="One step file to save")
+    parser.add_argument("--ablation", type=bool, default=False, help="Run ablation study")
     parser.add_argument('--num_cpus', type=int, default=4, help='Number of CPUs to use')
+    parser.add_argument('--project_name', type=str, required=False, default="Selecticity-Experiments",
+                        help='The name of the wandb project to save results in')
     config = parser.parse_args().config
     overrides = parser.parse_args().overrides
     print(f"\nUsing config {config}")
@@ -201,19 +203,23 @@ def main():
 
     # You can modify the values here to run in parallel using ray
     tasks = []
-    settings_options = [
-        ["d_state", [16]],
-        ["seed", [4]],
-        # ["dataset.induction_len", [16, 32, 64, 128, 255]],
-        # ["dataset.auto_regressive", [True]],
-        # ["model.S4_init", ["diag-lin", "legs", "diag-real", "diag-legs", "diag-random"]],
-        ["model.bias", [False]],
-        ["model.B_is_selective", [True, False]],
-        ["model.C_is_selective", [True, False]],
-        ["model.dt_is_selective", [False, True]],
-        ["model.channel_sharing", [False]],
-        ["model.ssm_type", ["S6-Real", "S6-Complex"]],
-    ]
+    if parser.parse_args().ablation:
+        # you can change the settings_options to run different ablation studies as you like
+        # this will generate an outer product of all the hyperparameters
+        settings_options = [
+            ["d_state", [16]],
+            ["seed", [0]],
+            ["model.bias", [False]],
+            ["model.B_is_selective", [True, False]],
+            ["model.C_is_selective", [True, False]],
+            ["model.dt_is_selective", [False, True]],
+            ["model.channel_sharing", [False]],
+            ["model.ssm_type", ["S6-Real", "S6-Complex"]],
+        ]
+    else:
+        settings_options = []
+    settings_options.append(['wandb.project', [parser.parse_args().project_name]])
+
     for config in experiments(settings_options):
         config.update({"comment": ""})
         config = override_config(base_config, [f"{k}={v}" for k, v in config.items()])
