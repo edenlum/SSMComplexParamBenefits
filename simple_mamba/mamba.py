@@ -540,6 +540,70 @@ class MambaBlock(nn.Module):
         else:
             raise NotImplementedError
 
+    def selective_scan_seq(self, x, delta, A, B, C, D):
+        #  x : (B, L, ED)
+        #  Δ : (B, L, ED)
+        #  A : (ED, N)
+        #  B : (B, L, N)
+        #  C : (B, L, N)
+        #  D : (ED)
+
+        #  y : (B, L, ED)
+
+        _, L, _ = x.shape
+
+        # deltaA = torch.exp(delta.unsqueeze(-1) * A)  #  (B, L, ED, N)
+        # deltaB = delta.unsqueeze(-1) * B.unsqueeze(2)  #  (B, L, ED, N)
+
+        if self.config.discretizationA == "yuval_disc" and (
+                self.config.ssm_type == "S6-Complex" or self.config.ssm_type == "S6-Real-complex-bias"):
+            deltaA = torch.exp(delta.unsqueeze(-1) * A.real + 1j * A.imag)
+        elif self.config.discretizationA == "normal":
+            deltaA = torch.exp(delta.unsqueeze(-1) * A)  #
+        else:
+            raise NotImplementedError
+
+        # if self.config.channel_sharing:
+        #     B = B.unsqueeze(2)
+        if self.config.B_is_selective:
+            B = B.unsqueeze(2)
+        #B = B.unsqueeze(2)
+        if self.config.discretizationB == "s6":
+            deltaB = delta.unsqueeze(-1) * B  #  (B, L, ED, N)
+
+        elif self.config.discretizationB == "zoh":
+            # deltaB = B * torch.exp(delta.unsqueeze(-1) * A - 1.) / A  #  (B, L, ED, N)
+            deltaB = B * (torch.exp(delta.unsqueeze(-1) * A) - 1.) / A
+
+        else:
+            raise NotImplementedError
+
+
+        BX = deltaB * (x.unsqueeze(-1))  #  (B, L, ED, N)
+        if self.config.ssm_type == "S6-Real-complex-bias":
+            deltaA = deltaA.expand_as(BX)
+
+        h = torch.zeros(x.size(0), self.config.d_inner, self.config.d_state, device=deltaA.device)  #  (B, ED, N)
+        hs = []
+
+        for t in range(0, L):
+            h = deltaA[:, t] * h + BX[:, t]
+            hs.append(h)
+
+        hs = torch.stack(hs, dim=1)  #  (B, L, ED, N)
+
+        if not self.config.C_is_selective:
+            y = (hs * C).sum(dim=3)
+        else:
+            y = (hs @ C.unsqueeze(-1)).squeeze(3)  #  (B, L, ED, N) @ (B, L, N, 1) -> (B, L, ED, 1)
+
+        if (self.config.ssm_type == "S6-Real-complex-bias") or (self.config.ssm_type =="S6-Complex"):
+            y = y * 2
+
+        y = y + D.unsqueeze(0).unsqueeze(0) * x
+
+        return y.real
+
 
 # taken straight from https://github.com/johnma2006/mamba-minimal/blob/master/model.py
 class RMSNorm(nn.Module):

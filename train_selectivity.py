@@ -22,7 +22,6 @@ if not torch.cuda.is_available():
 
 device = torch.device('cuda')
 
-
 def train(config, model, data_loader, optimizer, mask):
     losses = []
     for epoch in range(config["train"]["num_epochs"]):
@@ -166,9 +165,12 @@ def main():
     parser.add_argument("--config", type=str, required=True, help="experiment config file")
     parser.add_argument('--overrides', nargs='*', default=[],
                         help='Provide overrides as key=value pairs (e.g., model.ssm_type="S4D-Complex").')
-    parser.add_argument("--ablation", action='store_true', default=False, required=False, help="Run ablation study")
+    parser.add_argument("--ablation", action='store_true', default=False, required=False,
+                        help="Run ablation study")
+    parser.add_argument("--compare_real_complex", action='store_true', default=False, required=False,
+                        help="Run the comparison between complex and real study")
     parser.add_argument('--num_cpus', type=int, default=4, help='Number of CPUs to use')
-    parser.add_argument('--project_name', type=str, required=False, default="Selecticity-Experiments",
+    parser.add_argument('--project_name', type=str, required=False, default="Selectivity-Experiments",
                         help='The name of the wandb project to save results in')
     config = parser.parse_args().config
     overrides = parser.parse_args().overrides
@@ -192,20 +194,34 @@ def main():
     if parser.parse_args().ablation:
         # you can change the settings_options to run different ablation studies as you like
         # this will generate an outer product of all the hyperparameters
+        # settings_options = [
+        #     ["model.use_cuda", [False, ]],  # Ablation is only supported by sequential calculation.
+        #     ["model.pscan", [False, ]],
+        #     ["model.B_is_selective", [False, True]],
+        #     ["model.C_is_selective", [False, True]],
+        #     ["model.dt_is_selective", [False, True]],
+        #     ["seed", [1111,]],
+        #     ["model.ssm_type", ["S6-Real", "S6-Complex"]],
+        # ]
         settings_options = [
-            ["d_state", [16]],
-            ["seed", [0]],
-            ["model.bias", [False]],
-            ["model.B_is_selective", [True, False]],
-            ["model.C_is_selective", [True, False]],
-            ["model.dt_is_selective", [False, True]],
-            ["model.channel_sharing", [False]],
+            ["model.use_cuda", [False, ]],  # Ablation is only supported by sequential calculation.
+            ["model.pscan", [False, ]],
+            ["model.B_is_selective", [False]],
+            ["model.C_is_selective", [False]],
+            ["model.dt_is_selective", [False]],
+            ["seed", [1111,2222,3333]],
+            ["model.ssm_type", ["S6-Real", "S6-Complex"]],
+        ]
+    elif parser.parse_args().compare_real_complex:
+        # you can change the settings_options to run different ablation studies as you like
+        # this will generate an outer product of all the hyperparameters
+        settings_options = [
+            ["seed", [1111, 2222, 3333]],
             ["model.ssm_type", ["S6-Real", "S6-Complex"]],
         ]
     else:
         settings_options = []
     settings_options.append(['wandb.project', [parser.parse_args().project_name]])
-
     for config in experiments(settings_options):
         config.update({"comment": ""})
         config = override_config(base_config, [f"{k}={v}" for k, v in config.items()])
