@@ -194,22 +194,13 @@ def main():
     if parser.parse_args().ablation:
         # you can change the settings_options to run different ablation studies as you like
         # this will generate an outer product of all the hyperparameters
-        # settings_options = [
-        #     ["model.use_cuda", [False, ]],  # Ablation is only supported by sequential calculation.
-        #     ["model.pscan", [False, ]],
-        #     ["model.B_is_selective", [False, True]],
-        #     ["model.C_is_selective", [False, True]],
-        #     ["model.dt_is_selective", [False, True]],
-        #     ["seed", [1111,]],
-        #     ["model.ssm_type", ["S6-Real", "S6-Complex"]],
-        # ]
         settings_options = [
             ["model.use_cuda", [False, ]],  # Ablation is only supported by sequential calculation.
             ["model.pscan", [False, ]],
-            ["model.B_is_selective", [False]],
-            ["model.C_is_selective", [False]],
-            ["model.dt_is_selective", [False]],
-            ["seed", [1111,2222,3333]],
+            ["model.B_is_selective", [False, True]],
+            ["model.C_is_selective", [False, True]],
+            ["model.dt_is_selective", [False, True]],
+            ["seed", [1111,]],
             ["model.ssm_type", ["S6-Real", "S6-Complex"]],
         ]
     elif parser.parse_args().compare_real_complex:
