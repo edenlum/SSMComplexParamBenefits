@@ -65,9 +65,11 @@ python train_selectivity.py --config <config_file>.yaml --num_cpus <number_of_cp
 
 - `<config_file>`: The name of the configuration file in the `configs/selectivity` directory (either `delay.yaml` or `induction.yaml`).
 - `<num_cpus>`: Specify the number of CPUs to use. Each experiment in the set will run on a different CPU. Defaults to 4.
-- `<project_name>`: (Optional) Specify the name of the W&B project where results will be saved. Defaults to `Selecticity-Experiments`.
+- `<project_name>`: (Optional) Specify the name of the W&B project where results will be saved. Defaults to `Selectivity-Experiments`.
 
-To run the ablation study, add the `--ablation` flag. This will run multiple experiments in parallel, each with different hyperparameters.
+To run the comparison between complex and real models from the paper, add the `--compare_real_complex` flag.  This will run multiple experiments in parallel, each with different hyperparameters.
+
+To run the ablation study from the paper, add the `--ablation` flag. This will run multiple experiments in parallel, each with different hyperparameters.
 
 You can play with the hyperparameters in the 'main()' function in 'train_selectivity.py'.
 

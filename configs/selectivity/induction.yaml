@@ -20,5 +20,4 @@ model:
   vocab_size: 16
   pad_vocab_size_multiple: 16
   bidirectional: false
-  use_cuda: false
-  pscan: true
+  use_cuda: true
