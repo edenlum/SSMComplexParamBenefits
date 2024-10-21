@@ -1,5 +1,5 @@
 # SSMComplexParamBenefits
-Code for reproducing the experiments in the paper Provable Benefits of Complex Parameterizations for Structured State Space Models [TODO: add link to arxiv when we upload]
+Code for reproducing the experiments in the paper Provable Benefits of Complex Parameterizations for Structured State Space Models [https://arxiv.org/abs/2410.14067]
 
 ## Setup
 
@@ -86,10 +86,13 @@ This command will use the configuration from `configs/selectivity/induction.yaml
 ## Citation
 For citing the paper you can use:
 ```
-@article{TODO,
-  title={Provable Benefits of Complex Parameterizations for Structured State Space Models},
-  author={TODO},
-  journal={TODO},
-  year={TODO}
+@misc{ranmilo2024provablebenefitscomplexparameterizations,
+      title={Provable Benefits of Complex Parameterizations for Structured State Space Models}, 
+      author={Yuval Ran-Milo and Eden Lumbroso and Edo Cohen-Karlik and Raja Giryes and Amir Globerson and Nadav Cohen},
+      year={2024},
+      eprint={2410.14067},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2410.14067}, 
 }
 ```
